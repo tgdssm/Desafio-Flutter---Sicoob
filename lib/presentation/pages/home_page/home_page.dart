@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:pokedex/commons/config/routes.dart';
@@ -31,6 +32,7 @@ class _HomePageState extends State<HomePage> {
   late GetPokemonStore _store;
 
   static const _gridPadding = 8.0;
+  static const platform = MethodChannel('pokedex/vibration');
 
   @override
   void initState() {
@@ -44,6 +46,15 @@ class _HomePageState extends State<HomePage> {
   void dispose() {
     super.dispose();
     searchController.dispose();
+  }
+
+
+  Future<void> vibrateDevice() async {
+    try {
+      await platform.invokeMethod('vibrate');
+    } on PlatformException catch (e) {
+      print("Erro ao tentar vibrar o dispositivo: ${e.message}");
+    }
   }
 
   @override
@@ -111,12 +122,13 @@ class _HomePageState extends State<HomePage> {
                           itemBuilder: (context, index) {
                             return PokedexCardComponent(
                               tag: state.data[index].name,
-                              onTap: () {
+                              onTap: () async {
                                 searchFocusNode.unfocus();
                                 final params = DetailsPageParams(
                                   pokes: state.data,
                                   index: index,
                                 );
+                                await vibrateDevice();
                                 context.go(AppRoutes.details, extra: params);
                               },
                               id: "#00${state.data[index].id}",
